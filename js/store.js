@@ -1,5 +1,5 @@
 // @ts-check
-// Modelo de datos de objetivos.json y operaciones de edición.
+// Modelo de datos de goals.json y operaciones de edición.
 //
 // La app no guarda "el documento entero" sino una lista de operaciones pendientes.
 // Así, si el archivo cambió en GitHub mientras tanto (por ejemplo, desde otro dispositivo o a mano),
@@ -185,5 +185,5 @@ export function commitMessage(ops, before, after) {
     }
   }
   const text = [...parts].join(', ');
-  return `objetivos: ${text.length > 120 ? text.slice(0, 117) + '…' : text || 'update'}`;
+  return `goals: ${text.length > 120 ? text.slice(0, 117) + '…' : text || 'update'}`;
 }

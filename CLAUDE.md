@@ -9,7 +9,7 @@ Los datos de cada usuario viven en su propio repo privado.
   (la CSP de `index.html` solo permite `'self'` y `https://api.github.com`).
 - `js/periodo.js` puede tener una copia idéntica fuera de este repo (CLI); si lo cambias,
   indícalo al terminar para sincronizarla. Los periodos se calculan en la `timeZone` del archivo de datos.
-- Esquema del JSON: ver `js/store.js` (tipos `Goal` y `GoalsDoc`). Commits de la app con prefijo `objetivos:`.
+- Esquema del JSON: ver `js/store.js` (tipos `Goal` y `GoalsDoc`). Commits de la app con prefijo `goals:`.
 - Antes de subir: `node --test tests/`. Si cambia la lista `SHELL` de `sw.js`, sube `VERSION`.
 
 ## Al terminar cada sesión

@@ -1,11 +1,11 @@
 // @ts-check
 // Claves de periodo de los objetivos, calculadas en una zona horaria IANA explícita
-// (la del campo `timeZone` de objetivos.json), nunca en la del dispositivo por accidente.
+// (la del campo `timeZone` de goals.json), nunca en la del dispositivo por accidente.
 //
 // Este mismo archivo sirve como módulo del navegador y como CLI de Node:
-//   node periodo.mjs [--tz Zona/IANA] [--file ruta/objetivos.json] [fecha]
+//   node periodo.mjs [--tz Zona/IANA] [--file ruta/goals.json] [fecha]
 //   node periodo.mjs [--tz ...] --dias YYYY-MM-DD [fecha]
-// Sin --tz, el CLI usa `timeZone` de ../objetivos.json (relativo a este archivo) o --file.
+// Sin --tz, el CLI usa `timeZone` de ../goals.json (relativo a este archivo) o --file.
 
 /** @typedef {'day'|'week'|'month'|'quarter'|'year'|'deadline'} Horizon */
 /** @typedef {{ y: number, m: number, d: number }} CivilDate */
@@ -151,7 +151,7 @@ if (typeof process !== 'undefined' && process.argv?.[1] && import.meta.url === `
     return i === -1 ? undefined : args.splice(i, 2)[1];
   };
   let tz = take('--tz');
-  const file = take('--file') ?? new URL('../objetivos.json', import.meta.url).pathname;
+  const file = take('--file') ?? new URL('../goals.json', import.meta.url).pathname;
   const dias = take('--dias');
   if (!tz) {
     const { readFileSync } = await import('node:fs');

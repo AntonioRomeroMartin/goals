@@ -534,7 +534,7 @@ function openSettings() {
       );
       if (!ok) { msg.textContent = 'File not found.'; return; }
       try {
-        await writeFile(next, serialize(emptyDoc(zone)), null, 'objetivos: create file');
+        await writeFile(next, serialize(emptyDoc(zone)), null, 'goals: create file');
       } catch (e) {
         msg.textContent = `Could not create it: ${/** @type {Error} */ (e).message}`;
         return;
