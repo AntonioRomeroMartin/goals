@@ -173,17 +173,17 @@ export function commitMessage(ops, before, after) {
   const parts = new Set();
   for (const op of ops) {
     switch (op.type) {
-      case 'add': parts.add(`nuevo «${op.goal.title}»`); break;
-      case 'edit': parts.add(`editado «${title(op.id)}»`); break;
+      case 'add': parts.add(`new “${op.goal.title}”`); break;
+      case 'edit': parts.add(`edited “${title(op.id)}”`); break;
       case 'inc':
-      case 'set': parts.add(`progreso «${title(op.id)}»`); break;
-      case 'archive': parts.add(`${op.archived ? 'archivado' : 'restaurado'} «${title(op.id)}»`); break;
-      case 'delete': parts.add(`borrado «${title(op.id)}»`); break;
-      case 'addCategory': parts.add(`categoría «${op.name}»`); break;
-      case 'removeCategory': parts.add(`quitada categoría «${op.name}»`); break;
-      case 'setTimeZone': parts.add(`zona horaria ${op.timeZone}`); break;
+      case 'set': parts.add(`progress “${title(op.id)}”`); break;
+      case 'archive': parts.add(`${op.archived ? 'archived' : 'restored'} “${title(op.id)}”`); break;
+      case 'delete': parts.add(`deleted “${title(op.id)}”`); break;
+      case 'addCategory': parts.add(`category “${op.name}”`); break;
+      case 'removeCategory': parts.add(`removed category “${op.name}”`); break;
+      case 'setTimeZone': parts.add(`time zone ${op.timeZone}`); break;
     }
   }
   const text = [...parts].join(', ');
-  return `objetivos: ${text.length > 120 ? text.slice(0, 117) + '…' : text || 'actualización'}`;
+  return `objetivos: ${text.length > 120 ? text.slice(0, 117) + '…' : text || 'update'}`;
 }

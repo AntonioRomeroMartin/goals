@@ -126,9 +126,9 @@ test('mensaje de commit con prefijo y agrupado', () => {
     { type: 'inc', id: 'a', key: '2026-W40', delta: 1 },
     { type: 'inc', id: 'a', key: '2026-W40', delta: 1 },
   ];
-  assert.equal(commitMessage(ops, before, applyOps(before, ops)), 'objetivos: progreso «Correr»');
+  assert.equal(commitMessage(ops, before, applyOps(before, ops)), 'objetivos: progress “Correr”');
   const del = [{ type: 'delete', id: 'a' }];
-  assert.equal(commitMessage(del, before, applyOps(before, del)), 'objetivos: borrado «Correr»');
+  assert.equal(commitMessage(del, before, applyOps(before, del)), 'objetivos: deleted “Correr”');
 });
 
 test('normalize y serialize', () => {

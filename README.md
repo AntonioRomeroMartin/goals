@@ -1,28 +1,28 @@
-# Objetivos
+# Goals
 
-PWA estática para seguir objetivos por plazo (diario, semanal, mensual, trimestral, anual y con fecha límite) y por categoría. Cualquiera puede usarla con **sus propios datos privados**.
+A static PWA to track goals by horizon (daily, weekly, monthly, quarterly, yearly and with a deadline) and by category. Anyone can use it with **their own private data**.
 
-## Cómo usarla
+## How to use it
 
-1. Crea un repo **privado** en GitHub para tus datos (o usa uno que ya tengas).
-2. Crea un token *fine-grained* en GitHub → Settings → Developer settings → Fine-grained tokens:
-   - *Repository access*: **Only select repositories** → ese repo.
-   - *Permissions* → *Contents*: **Read and write**. Nada más.
-3. Abre la app, pulsa ⚙ y pon el token, tu usuario, el repo, el archivo (por defecto `objetivos.json`) y la rama. Si el archivo no existe, la app lo crea vacío.
-4. Crea tus categorías (botón «Categorías») y tus objetivos. En el móvil puedes instalarla como app.
+1. Create a **private** GitHub repo for your data (or use one you already have).
+2. Create a *fine-grained* token in GitHub → Settings → Developer settings → Fine-grained tokens:
+   - *Repository access*: **Only select repositories** → that repo.
+   - *Permissions* → *Contents*: **Read and write**. Nothing else.
+3. Open the app, tap ⚙ and enter the token, your username, the repo, the file (default `goals.json`) and the branch. If the file doesn't exist, the app creates an empty one.
+4. Create your categories (“Categories” button) and your goals. On a phone you can install it as an app.
 
-## Privacidad
+## Privacy
 
-- La web no tiene servidor: solo habla con `api.github.com` desde tu navegador (CSP restringida, sin scripts de terceros).
-- El token y una copia de tus datos se guardan solo en el almacenamiento local de tu navegador.
-- Este repo contiene únicamente código; no hay categorías, objetivos ni datos de nadie.
+- The site has no server: your browser talks only to `api.github.com` (strict CSP, no third-party scripts).
+- The token and a copy of your data are stored only in your browser's local storage.
+- This repo contains code only: no categories, goals or anyone's data.
 
-## Formato de datos
+## Data format
 
 ```json
 {
   "version": 1,
-  "timeZone": "Zona/IANA",
+  "timeZone": "Area/City",
   "categories": ["…"],
   "goals": [{ "id": "…", "kind": "goal", "title": "…", "category": "…",
               "horizon": "day|week|month|quarter|year|deadline", "target": 3, "unit": "…",
@@ -31,13 +31,13 @@ PWA estática para seguir objetivos por plazo (diario, semanal, mensual, trimest
 }
 ```
 
-Las claves de periodo (`YYYY-MM-DD`, `YYYY-Www` semana ISO, `YYYY-MM`, `YYYY-Qn`, `YYYY`, `once`) se calculan en la zona `timeZone` del archivo, así que el progreso se reinicia solo en cada periodo. `js/periodo.js` funciona también como CLI de Node: `node js/periodo.js --file objetivos.json`.
+Period keys (`YYYY-MM-DD`, `YYYY-Www` ISO week, `YYYY-MM`, `YYYY-Qn`, `YYYY`, `once`) are computed in the file's `timeZone`, so progress resets automatically every period. `js/periodo.js` also works as a Node CLI: `node js/periodo.js --file goals.json`.
 
-## Desarrollo
+## Development
 
-HTML + JS sin build, con `// @ts-check` y tipos JSDoc.
+Plain HTML + JS, no build step, with `// @ts-check` and JSDoc types.
 
 ```bash
-python3 -m http.server 8000   # abrir http://localhost:8000
-node --test tests/            # pruebas de la lógica
+python3 -m http.server 8000   # open http://localhost:8000
+node --test tests/            # logic tests
 ```

@@ -4,7 +4,7 @@
 // Los datos se cachean aparte en localStorage; las llamadas a api.github.com no pasan por aquí.
 // Sube VERSION cuando cambie la lista SHELL (el contenido se actualiza solo: red primero).
 
-const VERSION = 'v1';
+const VERSION = 'v2';
 const CACHE = `goals-${VERSION}`;
 const SHELL = [
   './',

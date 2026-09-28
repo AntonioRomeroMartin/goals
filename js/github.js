@@ -44,13 +44,13 @@ async function fail(res) {
     // cuerpo sin JSON
   }
   const hints = /** @type {Record<number, string>} */ ({
-    401: 'Token no válido o caducado.',
-    403: 'El token no tiene permiso (o se superó el límite de la API).',
-    404: 'No se encuentra el repo o el archivo (o el token no tiene acceso a ese repo).',
-    409: 'Conflicto: el archivo cambió en GitHub.',
-    422: 'Conflicto: el archivo cambió en GitHub.',
+    401: 'Invalid or expired token.',
+    403: 'The token lacks permission (or the API rate limit was hit).',
+    404: 'Repo or file not found (or the token has no access to that repo).',
+    409: 'Conflict: the file changed on GitHub.',
+    422: 'Conflict: the file changed on GitHub.',
   });
-  throw new GitHubError(res.status, hints[res.status] ?? `Error de GitHub ${res.status}: ${detail}`);
+  throw new GitHubError(res.status, hints[res.status] ?? `GitHub error ${res.status}: ${detail}`);
 }
 
 /** @param {string} text */
@@ -78,7 +78,7 @@ export async function readFile(cfg) {
   const res = await fetch(url, { headers: headers(cfg), cache: 'no-store' });
   if (!res.ok) await fail(res);
   const body = await res.json();
-  if (typeof body.content !== 'string') throw new GitHubError(0, 'La ruta no es un archivo.');
+  if (typeof body.content !== 'string') throw new GitHubError(0, 'The path is not a file.');
   return { text: decodeBase64(body.content), sha: body.sha };
 }
 

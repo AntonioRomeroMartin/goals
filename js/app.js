@@ -14,21 +14,21 @@ const LS = { cfg: 'goals.cfg', cache: 'goals.cache', pending: 'goals.pending', u
 
 /** @type {Record<Horizon, string>} */
 const HORIZON_LABEL = {
-  day: 'Hoy',
-  week: 'Esta semana',
-  month: 'Este mes',
-  quarter: 'Este trimestre',
-  year: 'Este año',
-  deadline: 'Con fecha límite',
+  day: 'Today',
+  week: 'This week',
+  month: 'This month',
+  quarter: 'This quarter',
+  year: 'This year',
+  deadline: 'With deadline',
 };
 /** @type {Record<Horizon, string>} */
 const HORIZON_SHORT = {
-  day: 'Diario',
-  week: 'Semanal',
-  month: 'Mensual',
-  quarter: 'Trimestral',
-  year: 'Anual',
-  deadline: 'Fecha límite',
+  day: 'Daily',
+  week: 'Weekly',
+  month: 'Monthly',
+  quarter: 'Quarterly',
+  year: 'Yearly',
+  deadline: 'Deadline',
 };
 
 // ---------------------------------------------------------------- estado
@@ -117,7 +117,7 @@ async function refresh() {
     if (state.pending.length) scheduleSave(0);
   } catch (err) {
     if (isNetworkError(err)) state.online = false;
-    else state.error = err instanceof SyntaxError ? 'objetivos.json no es JSON válido.' : /** @type {Error} */ (err).message;
+    else state.error = err instanceof SyntaxError ? 'The data file is not valid JSON.' : /** @type {Error} */ (err).message;
   }
   render();
 }
@@ -157,7 +157,7 @@ async function flush() {
     }
   } catch (err) {
     if (isNetworkError(err)) state.online = false;
-    else state.error = `No se pudo guardar: ${/** @type {Error} */ (err).message}`;
+    else state.error = `Could not save: ${/** @type {Error} */ (err).message}`;
   } finally {
     state.saving = false;
     render();
@@ -200,7 +200,7 @@ function h(tag, props = {}, ...children) {
 const $ = (id) => /** @type {HTMLElement} */ (document.getElementById(id));
 
 /** @param {number} n */
-const fmt = (n) => (Number.isInteger(n) ? String(n) : n.toLocaleString('es-ES', { maximumFractionDigits: 2 }));
+const fmt = (n) => (Number.isInteger(n) ? String(n) : n.toLocaleString('en-GB', { maximumFractionDigits: 2 }));
 
 // ---------------------------------------------------------------- render
 
@@ -215,7 +215,7 @@ function render() {
 
 function renderToday() {
   const t = civilDate(new Date(), tz());
-  $('today').textContent = new Date(Date.UTC(t.y, t.m - 1, t.d)).toLocaleDateString('es-ES', {
+  $('today').textContent = new Date(Date.UTC(t.y, t.m - 1, t.d)).toLocaleDateString('en-GB', {
     weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC',
   });
 }
@@ -223,12 +223,12 @@ function renderToday() {
 function renderStatus() {
   const status = $('status');
   let text = '';
-  if (!state.cfg) text = 'Sin configurar';
-  else if (!state.online) text = 'Sin conexión';
-  else if (state.saving) text = 'Guardando…';
-  else if (state.pending.length) text = 'Cambios pendientes…';
-  else if (state.loaded) text = 'Sincronizado';
-  else text = 'Cargando…';
+  if (!state.cfg) text = 'Not set up';
+  else if (!state.online) text = 'Offline';
+  else if (state.saving) text = 'Saving…';
+  else if (state.pending.length) text = 'Pending changes…';
+  else if (state.loaded) text = 'Synced';
+  else text = 'Loading…';
   status.textContent = text;
   status.dataset.state = !state.online ? 'offline' : state.pending.length || state.saving ? 'busy' : 'ok';
 
@@ -237,15 +237,15 @@ function renderStatus() {
   banner.hidden = true;
   banner.dataset.kind = 'info';
   if (!state.cfg) {
-    banner.append('Configura el acceso a GitHub para empezar. ', h('button', { class: 'link', onclick: openSettings }, 'Configurar'));
+    banner.append('Connect to GitHub to get started. ', h('button', { class: 'link', onclick: openSettings }, 'Set up'));
     banner.hidden = false;
   } else if (!state.online) {
-    const when = state.fetchedAt ? new Date(state.fetchedAt).toLocaleString('es-ES', { timeZone: tz() }) : 'nunca';
-    banner.append(`Sin conexión: mostrando los datos guardados (${when}). La edición está desactivada.`);
+    const when = state.fetchedAt ? new Date(state.fetchedAt).toLocaleString('en-GB', { timeZone: tz() }) : 'never';
+    banner.append(`Offline: showing saved data (${when}). Editing is disabled.`);
     banner.dataset.kind = 'warn';
     banner.hidden = false;
   } else if (state.error) {
-    banner.append(state.error, ' ', h('button', { class: 'link', onclick: retry }, 'Reintentar'));
+    banner.append(state.error, ' ', h('button', { class: 'link', onclick: retry }, 'Retry'));
     banner.dataset.kind = 'error';
     banner.hidden = false;
   }
@@ -263,7 +263,7 @@ function renderToolbar() {
   }
   const select = /** @type {HTMLSelectElement} */ ($('filter'));
   select.replaceChildren(
-    h('option', { value: '' }, 'Todas las categorías'),
+    h('option', { value: '' }, 'All categories'),
     ...doc.categories.map((c) => h('option', { value: c }, c)),
   );
   if (state.filter && !doc.categories.includes(state.filter)) state.filter = '';
@@ -281,13 +281,13 @@ function renderList() {
   );
 
   if (!state.loaded && !state.fetchedAt) {
-    main.append(h('p', { class: 'empty' }, state.cfg ? 'Cargando objetivos…' : 'Aún no hay datos.'));
+    main.append(h('p', { class: 'empty' }, state.cfg ? 'Loading goals…' : 'No data yet.'));
     return;
   }
   if (!goals.length) {
     const msg = state.showArchived
-      ? 'No hay objetivos archivados.'
-      : doc.goals.length ? 'No hay objetivos aquí todavía.' : 'Aún no tienes objetivos. Crea el primero con «+ Nuevo».';
+      ? 'No archived goals.'
+      : doc.goals.length ? 'No goals here yet.' : 'You have no goals yet. Create your first one with “+ New”.';
     main.append(h('p', { class: 'empty' }, msg));
     return;
   }
@@ -345,7 +345,7 @@ function card(g, now) {
     progress = h(
       'div',
       { class: 'row' },
-      h('button', { class: 'btn', disabled: !canEdit(), onclick: () => dispatch({ type: 'archive', id: g.id, archived: false }) }, 'Restaurar'),
+      h('button', { class: 'btn', disabled: !canEdit(), onclick: () => dispatch({ type: 'archive', id: g.id, archived: false }) }, 'Restore'),
     );
   } else if (target) {
     const pct = Math.min(100, (value / target) * 100);
@@ -360,13 +360,13 @@ function card(g, now) {
       h(
         'div',
         { class: 'row' },
-        h('button', { class: 'round', 'aria-label': 'Restar', disabled: !editable || value <= 0, onclick: () => dispatch({ type: 'inc', id: g.id, key, delta: -1 }) }, '−'),
+        h('button', { class: 'round', 'aria-label': 'Decrease', disabled: !editable || value <= 0, onclick: () => dispatch({ type: 'inc', id: g.id, key, delta: -1 }) }, '−'),
         h(
           'button',
-          { class: 'value', disabled: !editable, title: 'Escribir valor exacto', onclick: () => askValue(g, key, value) },
+          { class: 'value', disabled: !editable, title: 'Enter exact value', onclick: () => askValue(g, key, value) },
           `${fmt(value)} / ${fmt(target)}${g.unit ? ` ${g.unit}` : ''}`,
         ),
-        h('button', { class: 'round', 'aria-label': 'Sumar', disabled: !editable, onclick: () => dispatch({ type: 'inc', id: g.id, key, delta: 1 }) }, '+'),
+        h('button', { class: 'round', 'aria-label': 'Increase', disabled: !editable, onclick: () => dispatch({ type: 'inc', id: g.id, key, delta: 1 }) }, '+'),
       ),
     );
   } else {
@@ -381,7 +381,7 @@ function card(g, now) {
           disabled: !editable,
           onclick: () => dispatch({ type: 'set', id: g.id, key, value: done ? 0 : 1 }),
         },
-        done ? '✓ Hecho' : 'Marcar como hecho',
+        done ? '✓ Done' : 'Mark as done',
       ),
     );
   }
@@ -398,16 +398,16 @@ function card(g, now) {
 /** @param {string} deadline @param {Date} now */
 function deadlineChip(deadline, now) {
   const d = daysUntil(deadline, now, tz());
-  const text = d > 1 ? `faltan ${d} días` : d === 1 ? 'mañana' : d === 0 ? 'hoy' : `vencido hace ${-d} ${d === -1 ? 'día' : 'días'}`;
+  const text = d > 1 ? `${d} days left` : d === 1 ? 'tomorrow' : d === 0 ? 'today' : `overdue by ${-d} ${d === -1 ? 'day' : 'days'}`;
   return h('span', { class: d < 0 ? 'chip danger' : d <= 7 ? 'chip warn' : 'chip' }, `${deadline} · ${text}`);
 }
 
 /** @param {Goal} g @param {string} key @param {number} value */
 function askValue(g, key, value) {
-  const input = prompt(`Valor para «${g.title}» (${key})`, String(value));
+  const input = prompt(`Value for “${g.title}” (${key})`, String(value));
   if (input === null) return;
   const n = Number(input.replace(',', '.'));
-  if (!Number.isFinite(n) || n < 0) return alert('Introduce un número mayor o igual que 0.');
+  if (!Number.isFinite(n) || n < 0) return alert('Enter a number greater than or equal to 0.');
   dispatch({ type: 'set', id: g.id, key, value: n });
 }
 
@@ -423,11 +423,11 @@ function openGoalForm(goal) {
   const doc = current();
   const f = /** @type {any} */ (form.elements);
 
-  $('goal-dialog-title').textContent = goal ? 'Editar objetivo' : 'Nuevo objetivo';
+  $('goal-dialog-title').textContent = goal ? 'Edit goal' : 'New goal';
   f.title.value = goal?.title ?? '';
   f.category.replaceChildren(
     ...doc.categories.map((c) => h('option', { value: c }, c)),
-    h('option', { value: NEW_CATEGORY }, '+ Nueva categoría…'),
+    h('option', { value: NEW_CATEGORY }, '+ New category…'),
   );
   f.category.value = goal?.category ?? (state.filter || doc.categories[0] || NEW_CATEGORY);
   f.newCategory.value = '';
@@ -442,13 +442,13 @@ function openGoalForm(goal) {
   actions.replaceChildren();
   if (goal) {
     actions.append(
-      h('button', { type: 'button', class: 'btn', onclick: () => { dispatch({ type: 'archive', id: goal.id, archived: !goal.archived }); dialog.close(); } }, goal.archived ? 'Restaurar' : 'Archivar'),
+      h('button', { type: 'button', class: 'btn', onclick: () => { dispatch({ type: 'archive', id: goal.id, archived: !goal.archived }); dialog.close(); } }, goal.archived ? 'Restore' : 'Archive'),
       h('button', { type: 'button', class: 'link danger', onclick: () => {
-        if (confirm(`¿Borrar «${goal.title}» definitivamente? Se perderá también su historial de progreso.\n\nSi solo quieres quitarlo de la vista, usa «Archivar».`)) {
+        if (confirm(`Delete “${goal.title}” permanently? Its progress history will be lost too.\n\nTo just hide it, use “Archive”.`)) {
           dispatch({ type: 'delete', id: goal.id });
           dialog.close();
         }
-      } }, 'Borrar…'),
+      } }, 'Delete…'),
     );
   }
 
@@ -463,8 +463,8 @@ function openGoalForm(goal) {
     const deadline = horizon === 'deadline' ? String(f.deadline.value) || null : null;
     if (!title) return f.title.focus();
     if (!category) return f.newCategory.focus();
-    if (target !== null && (!Number.isFinite(target) || target <= 0)) return alert('La meta debe ser un número mayor que 0 (o déjala vacía).');
-    if (horizon === 'deadline' && !deadline) return alert('Pon la fecha límite.');
+    if (target !== null && (!Number.isFinite(target) || target <= 0)) return alert('The target must be a number greater than 0 (or leave it empty).');
+    if (horizon === 'deadline' && !deadline) return alert('Set the deadline.');
     const fields = {
       title,
       category,
@@ -501,7 +501,7 @@ function openSettings() {
   f.token.value = cfg?.token ?? '';
   f.owner.value = cfg?.owner ?? '';
   f.repo.value = cfg?.repo ?? '';
-  f.path.value = cfg?.path ?? 'objetivos.json';
+  f.path.value = cfg?.path ?? 'goals.json';
   f.branch.value = cfg?.branch ?? 'main';
   const msg = $('settings-msg');
   msg.textContent = '';
@@ -516,27 +516,27 @@ function openSettings() {
       path: String(f.path.value).trim(),
       branch: String(f.branch.value).trim() || 'main',
     };
-    msg.textContent = 'Comprobando…';
+    msg.textContent = 'Checking…';
     try {
       const { text } = await readFile(next);
       normalize(JSON.parse(text));
     } catch (err) {
       const missing = err instanceof GitHubError && err.status === 404;
       if (!missing) {
-        msg.textContent = err instanceof SyntaxError ? 'El archivo no es JSON válido.' : /** @type {Error} */ (err).message;
+        msg.textContent = err instanceof SyntaxError ? 'The file is not valid JSON.' : /** @type {Error} */ (err).message;
         return;
       }
       const zone = deviceTimeZone();
       const ok = confirm(
-        `No se encuentra ${next.path} en ${next.owner}/${next.repo} (rama ${next.branch}).\n\n` +
-        `Si el repo existe y el token tiene acceso, ¿creo el archivo vacío? ` +
-        `Los periodos se calcularán en la zona horaria ${zone} (podrás cambiarla).`,
+        `${next.path} was not found in ${next.owner}/${next.repo} (branch ${next.branch}).\n\n` +
+        `If the repo exists and the token has access, create an empty file? ` +
+        `Periods will be computed in the ${zone} time zone (you can change it).`,
       );
-      if (!ok) { msg.textContent = 'No se encuentra el archivo.'; return; }
+      if (!ok) { msg.textContent = 'File not found.'; return; }
       try {
-        await writeFile(next, serialize(emptyDoc(zone)), null, 'objetivos: crear archivo');
+        await writeFile(next, serialize(emptyDoc(zone)), null, 'objetivos: create file');
       } catch (e) {
-        msg.textContent = `No se pudo crear: ${/** @type {Error} */ (e).message}`;
+        msg.textContent = `Could not create it: ${/** @type {Error} */ (e).message}`;
         return;
       }
     }
@@ -554,7 +554,7 @@ function openSettings() {
   };
 
   $('forget-token').onclick = () => {
-    if (!confirm('¿Olvidar el token en este dispositivo? Los cambios no guardados se perderán.')) return;
+    if (!confirm('Forget the token on this device? Unsaved changes will be lost.')) return;
     state.cfg = null;
     state.pending = [];
     state.loaded = false;
@@ -581,7 +581,7 @@ function openManage() {
     ev.preventDefault();
     const name = input.value.trim();
     if (!name) return;
-    if (current().categories.includes(name)) return alert(`La categoría «${name}» ya existe.`);
+    if (current().categories.includes(name)) return alert(`The category “${name}” already exists.`);
     dispatch({ type: 'addCategory', name });
     input.value = '';
     renderManage();
@@ -593,9 +593,9 @@ function openManage() {
   tzForm.onsubmit = (ev) => {
     ev.preventDefault();
     const zone = tzInput.value.trim();
-    if (!isValidTimeZone(zone)) return alert('Zona horaria no válida. Usa el formato IANA, p. ej. America/Mexico_City.');
+    if (!isValidTimeZone(zone)) return alert('Invalid time zone. Use the IANA format, e.g. America/Mexico_City.');
     if (zone === current().timeZone) return;
-    if (!confirm(`¿Calcular los periodos en ${zone}? El progreso ya guardado no se mueve de periodo.`)) return;
+    if (!confirm(`Compute periods in ${zone}? Progress already saved stays in its period.`)) return;
     dispatch({ type: 'setTimeZone', timeZone: zone });
     renderManage();
   };
@@ -612,29 +612,29 @@ function renderManage() {
         'li',
         {},
         h('span', {}, name),
-        h('span', { class: 'count' }, used ? `${used} ${used === 1 ? 'objetivo' : 'objetivos'}` : 'sin usar'),
+        h('span', { class: 'count' }, used ? `${used} ${used === 1 ? 'goal' : 'goals'}` : 'unused'),
         h(
           'button',
           {
             type: 'button',
             class: 'link danger',
             disabled: used > 0,
-            title: used > 0 ? 'Mueve o borra antes sus objetivos (también los archivados)' : '',
+            title: used > 0 ? 'Move or delete its goals first (archived ones too)' : '',
             onclick: () => {
-              if (!confirm(`¿Quitar la categoría «${name}»?`)) return;
+              if (!confirm(`Remove the category “${name}”?`)) return;
               dispatch({ type: 'removeCategory', name });
               renderManage();
             },
           },
-          'Quitar',
+          'Remove',
         ),
       );
     }),
   );
-  if (!doc.categories.length) list.append(h('li', { class: 'count' }, 'Todavía no hay categorías.'));
+  if (!doc.categories.length) list.append(h('li', { class: 'count' }, 'No categories yet.'));
   $('tz-current').textContent = doc.timeZone
-    ? `Ahora: ${doc.timeZone}`
-    : `El archivo no tiene zona horaria; se usa la del dispositivo (${deviceTimeZone()}).`;
+    ? `Current: ${doc.timeZone}`
+    : `The file has no time zone; using this device's (${deviceTimeZone()}).`;
 }
 
 // ---------------------------------------------------------------- arranque

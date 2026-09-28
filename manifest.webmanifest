@@ -1,8 +1,8 @@
 {
-  "name": "Objetivos",
-  "short_name": "Objetivos",
-  "description": "Mis objetivos por plazo y categoría",
-  "lang": "es",
+  "name": "Goals",
+  "short_name": "Goals",
+  "description": "Track goals by horizon and category",
+  "lang": "en",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

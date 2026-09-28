@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -8,8 +8,8 @@
   <meta name="theme-color" content="#f6f5f1" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#17171a" media="(prefers-color-scheme: dark)">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Objetivos">
-  <title>Objetivos</title>
+  <meta name="apple-mobile-web-app-title" content="Goals">
+  <title>Goals</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -19,125 +19,125 @@
 <body>
   <header class="top">
     <div>
-      <h1>Objetivos</h1>
+      <h1>Goals</h1>
       <p id="today" class="today"></p>
     </div>
     <div class="top-actions">
       <span id="status" class="status" role="status" aria-live="polite"></span>
-      <button id="refresh" class="icon" aria-label="Recargar" title="Recargar">↻</button>
-      <button id="settings" class="icon" aria-label="Ajustes" title="Ajustes">⚙</button>
+      <button id="refresh" class="icon" aria-label="Reload" title="Reload">↻</button>
+      <button id="settings" class="icon" aria-label="Settings" title="Settings">⚙</button>
     </div>
   </header>
 
   <div id="banner" class="banner" hidden></div>
 
-  <nav class="toolbar" aria-label="Vista">
-    <div class="segmented" role="group" aria-label="Agrupar por">
-      <button data-view="horizon" aria-pressed="true">Por plazo</button>
-      <button data-view="category" aria-pressed="false">Por categoría</button>
+  <nav class="toolbar" aria-label="View">
+    <div class="segmented" role="group" aria-label="Group by">
+      <button data-view="horizon" aria-pressed="true">By horizon</button>
+      <button data-view="category" aria-pressed="false">By category</button>
     </div>
-    <select id="filter" aria-label="Filtrar por categoría"></select>
-    <label class="check"><input type="checkbox" id="archived"> Archivados</label>
-    <button id="manage" class="link">Categorías</button>
+    <select id="filter" aria-label="Filter by category"></select>
+    <label class="check"><input type="checkbox" id="archived"> Archived</label>
+    <button id="manage" class="link">Categories</button>
   </nav>
 
   <main id="list"></main>
 
-  <button id="add" class="fab" aria-label="Nuevo objetivo">+ Nuevo</button>
+  <button id="add" class="fab" aria-label="New goal">+ New</button>
 
   <dialog id="goal-dialog">
     <form id="goal-form" novalidate>
-      <h2 id="goal-dialog-title">Nuevo objetivo</h2>
-      <label>Título
+      <h2 id="goal-dialog-title">New goal</h2>
+      <label>Title
         <input name="title" required maxlength="120" autocomplete="off">
       </label>
-      <label>Categoría
+      <label>Category
         <select name="category"></select>
       </label>
-      <label id="field-new-category" hidden>Nombre de la nueva categoría
+      <label id="field-new-category" hidden>New category name
         <input name="newCategory" maxlength="40" autocomplete="off">
       </label>
-      <label>Plazo
+      <label>Horizon
         <select name="horizon">
-          <option value="day">Diario</option>
-          <option value="week">Semanal</option>
-          <option value="month">Mensual</option>
-          <option value="quarter">Trimestral</option>
-          <option value="year">Anual</option>
-          <option value="deadline">Con fecha límite</option>
+          <option value="day">Daily</option>
+          <option value="week">Weekly</option>
+          <option value="month">Monthly</option>
+          <option value="quarter">Quarterly</option>
+          <option value="year">Yearly</option>
+          <option value="deadline">With deadline</option>
         </select>
       </label>
-      <label id="field-deadline" hidden>Fecha límite
+      <label id="field-deadline" hidden>Deadline
         <input name="deadline" type="date">
       </label>
       <div class="two">
-        <label>Meta (opcional)
-          <input name="target" inputmode="decimal" placeholder="p. ej. 4" autocomplete="off">
+        <label>Target (optional)
+          <input name="target" inputmode="decimal" placeholder="e.g. 4" autocomplete="off">
         </label>
-        <label>Unidad
-          <input name="unit" maxlength="20" placeholder="sesiones, km, págs…" autocomplete="off">
+        <label>Unit
+          <input name="unit" maxlength="20" placeholder="sessions, km, pages…" autocomplete="off">
         </label>
       </div>
-      <label>Repo relacionado (opcional)
-        <input name="repo" maxlength="80" placeholder="p. ej. AM" autocomplete="off">
+      <label>Related repo (optional)
+        <input name="repo" maxlength="80" placeholder="e.g. my-project" autocomplete="off">
       </label>
       <div class="actions">
         <div id="goal-extra-actions" class="extra"></div>
-        <button type="button" class="btn" data-close>Cancelar</button>
-        <button type="submit" class="btn primary">Guardar</button>
+        <button type="button" class="btn" data-close>Cancel</button>
+        <button type="submit" class="btn primary">Save</button>
       </div>
     </form>
   </dialog>
 
   <dialog id="manage-dialog">
     <div class="dialog-body">
-      <h2>Categorías</h2>
+      <h2>Categories</h2>
       <ul id="category-list" class="category-list"></ul>
       <form id="category-form" class="inline-form">
-        <input name="name" maxlength="40" autocomplete="off" placeholder="Nueva categoría" aria-label="Nueva categoría">
-        <button type="submit" class="btn">Añadir</button>
+        <input name="name" maxlength="40" autocomplete="off" placeholder="New category" aria-label="New category">
+        <button type="submit" class="btn">Add</button>
       </form>
-      <h2>Zona horaria de los periodos</h2>
+      <h2>Time zone for periods</h2>
       <p id="tz-current" class="hint"></p>
       <form id="tz-form" class="inline-form">
-        <input name="timeZone" autocomplete="off" spellcheck="false" aria-label="Zona horaria IANA">
-        <button type="submit" class="btn">Cambiar</button>
+        <input name="timeZone" autocomplete="off" spellcheck="false" aria-label="IANA time zone">
+        <button type="submit" class="btn">Change</button>
       </form>
-      <div class="actions"><div class="extra"></div><button type="button" class="btn primary" data-close>Hecho</button></div>
+      <div class="actions"><div class="extra"></div><button type="button" class="btn primary" data-close>Done</button></div>
     </div>
   </dialog>
 
   <dialog id="settings-dialog">
     <form id="settings-form">
-      <h2>Ajustes</h2>
-      <p class="hint">Tus objetivos se guardan en un archivo JSON dentro de <strong>tu propio repo privado</strong>
-        de GitHub. Crea un token <em>fine-grained</em> con acceso solo a ese repo y el permiso
-        <em>Contents: Read and write</em>. El token se guarda únicamente en este navegador; esta web no tiene
-        servidor y solo habla con <code>api.github.com</code>. Si el archivo no existe, la app te ofrece crearlo.</p>
-      <label>Token de GitHub
+      <h2>Settings</h2>
+      <p class="hint">Your goals are stored in a JSON file inside <strong>your own private GitHub repo</strong>.
+        Create a <em>fine-grained</em> token with access to that repo only and the
+        <em>Contents: Read and write</em> permission. The token is stored only in this browser; this site has
+        no server and only talks to <code>api.github.com</code>. If the file doesn't exist, the app offers to create it.</p>
+      <label>GitHub token
         <input name="token" type="password" required autocomplete="off" spellcheck="false" placeholder="github_pat_…">
       </label>
       <div class="two">
-        <label>Usuario u organización
-          <input name="owner" required autocomplete="off" spellcheck="false" placeholder="tu-usuario">
+        <label>User or organization
+          <input name="owner" required autocomplete="off" spellcheck="false" placeholder="your-username">
         </label>
-        <label>Repo (privado)
-          <input name="repo" required autocomplete="off" spellcheck="false" placeholder="mis-datos">
+        <label>Repo (private)
+          <input name="repo" required autocomplete="off" spellcheck="false" placeholder="my-data">
         </label>
       </div>
       <div class="two">
-        <label>Archivo
+        <label>File
           <input name="path" required autocomplete="off" spellcheck="false">
         </label>
-        <label>Rama
+        <label>Branch
           <input name="branch" required autocomplete="off" spellcheck="false">
         </label>
       </div>
       <p id="settings-msg" class="msg" role="status" aria-live="polite"></p>
       <div class="actions">
-        <div class="extra"><button type="button" id="forget-token" class="link danger">Olvidar token</button></div>
-        <button type="button" class="btn" data-close>Cerrar</button>
-        <button type="submit" class="btn primary">Probar y guardar</button>
+        <div class="extra"><button type="button" id="forget-token" class="link danger">Forget token</button></div>
+        <button type="button" class="btn" data-close>Close</button>
+        <button type="submit" class="btn primary">Test and save</button>
       </div>
     </form>
   </dialog>

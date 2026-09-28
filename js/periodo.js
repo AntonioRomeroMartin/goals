@@ -62,7 +62,7 @@ export function civilDate(when, tz) {
     if (match) return { y: Number(match[1]), m: Number(match[2]), d: Number(match[3]) };
     when = new Date(when);
   }
-  if (Number.isNaN(when.getTime())) throw new Error('Fecha no válida');
+  if (Number.isNaN(when.getTime())) throw new Error('Invalid date');
   /** @type {Record<string, string>} */
   const parts = {};
   for (const p of formatter(tz).formatToParts(when)) parts[p.type] = p.value;
@@ -111,7 +111,7 @@ export function periodKey(horizon, when, tz) {
     case 'deadline':
       return 'once';
     default:
-      throw new Error(`Horizonte desconocido: ${horizon}`);
+      throw new Error(`Unknown horizon: ${horizon}`);
   }
 }
 
@@ -162,7 +162,7 @@ if (typeof process !== 'undefined' && process.argv?.[1] && import.meta.url === `
     }
   }
   if (!isValidTimeZone(tz)) {
-    console.error(`No hay zona horaria válida: usa --tz Zona/IANA o pon "timeZone" en ${file}`);
+    console.error(`No valid time zone: use --tz Area/City or set "timeZone" in ${file}`);
     process.exit(1);
   }
   const when = args[0] ?? new Date();
