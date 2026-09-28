@@ -1,0 +1,30 @@
+# Secretos: nunca en el repo
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+*secret*
+*credential*
+*.keystore
+wallet*
+secrets/
+
+# Claude Code: ajustes personales de esta máquina
+.claude/settings.local.json
+
+# Sistema y editores
+.DS_Store
+*.swp
+*~
+.vscode/
+.idea/
+
+# Dependencias y builds
+node_modules/
+__pycache__/
+.venv/
+dist/

@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#f6f5f1" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#17171a" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Objetivos">
+  <title>Objetivos</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <header class="top">
+    <div>
+      <h1>Objetivos</h1>
+      <p id="today" class="today"></p>
+    </div>
+    <div class="top-actions">
+      <span id="status" class="status" role="status" aria-live="polite"></span>
+      <button id="refresh" class="icon" aria-label="Recargar" title="Recargar">↻</button>
+      <button id="settings" class="icon" aria-label="Ajustes" title="Ajustes">⚙</button>
+    </div>
+  </header>
+
+  <div id="banner" class="banner" hidden></div>
+
+  <nav class="toolbar" aria-label="Vista">
+    <div class="segmented" role="group" aria-label="Agrupar por">
+      <button data-view="horizon" aria-pressed="true">Por plazo</button>
+      <button data-view="category" aria-pressed="false">Por categoría</button>
+    </div>
+    <select id="filter" aria-label="Filtrar por categoría"></select>
+    <label class="check"><input type="checkbox" id="archived"> Archivados</label>
+    <button id="manage" class="link">Categorías</button>
+  </nav>
+
+  <main id="list"></main>
+
+  <button id="add" class="fab" aria-label="Nuevo objetivo">+ Nuevo</button>
+
+  <dialog id="goal-dialog">
+    <form id="goal-form" novalidate>
+      <h2 id="goal-dialog-title">Nuevo objetivo</h2>
+      <label>Título
+        <input name="title" required maxlength="120" autocomplete="off">
+      </label>
+      <label>Categoría
+        <select name="category"></select>
+      </label>
+      <label id="field-new-category" hidden>Nombre de la nueva categoría
+        <input name="newCategory" maxlength="40" autocomplete="off">
+      </label>
+      <label>Plazo
+        <select name="horizon">
+          <option value="day">Diario</option>
+          <option value="week">Semanal</option>
+          <option value="month">Mensual</option>
+          <option value="quarter">Trimestral</option>
+          <option value="year">Anual</option>
+          <option value="deadline">Con fecha límite</option>
+        </select>
+      </label>
+      <label id="field-deadline" hidden>Fecha límite
+        <input name="deadline" type="date">
+      </label>
+      <div class="two">
+        <label>Meta (opcional)
+          <input name="target" inputmode="decimal" placeholder="p. ej. 4" autocomplete="off">
+        </label>
+        <label>Unidad
+          <input name="unit" maxlength="20" placeholder="sesiones, km, págs…" autocomplete="off">
+        </label>
+      </div>
+      <label>Repo relacionado (opcional)
+        <input name="repo" maxlength="80" placeholder="p. ej. AM" autocomplete="off">
+      </label>
+      <div class="actions">
+        <div id="goal-extra-actions" class="extra"></div>
+        <button type="button" class="btn" data-close>Cancelar</button>
+        <button type="submit" class="btn primary">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="manage-dialog">
+    <div class="dialog-body">
+      <h2>Categorías</h2>
+      <ul id="category-list" class="category-list"></ul>
+      <form id="category-form" class="inline-form">
+        <input name="name" maxlength="40" autocomplete="off" placeholder="Nueva categoría" aria-label="Nueva categoría">
+        <button type="submit" class="btn">Añadir</button>
+      </form>
+      <h2>Zona horaria de los periodos</h2>
+      <p id="tz-current" class="hint"></p>
+      <form id="tz-form" class="inline-form">
+        <input name="timeZone" autocomplete="off" spellcheck="false" aria-label="Zona horaria IANA">
+        <button type="submit" class="btn">Cambiar</button>
+      </form>
+      <div class="actions"><div class="extra"></div><button type="button" class="btn primary" data-close>Hecho</button></div>
+    </div>
+  </dialog>
+
+  <dialog id="settings-dialog">
+    <form id="settings-form">
+      <h2>Ajustes</h2>
+      <p class="hint">Tus objetivos se guardan en un archivo JSON dentro de <strong>tu propio repo privado</strong>
+        de GitHub. Crea un token <em>fine-grained</em> con acceso solo a ese repo y el permiso
+        <em>Contents: Read and write</em>. El token se guarda únicamente en este navegador; esta web no tiene
+        servidor y solo habla con <code>api.github.com</code>. Si el archivo no existe, la app te ofrece crearlo.</p>
+      <label>Token de GitHub
+        <input name="token" type="password" required autocomplete="off" spellcheck="false" placeholder="github_pat_…">
+      </label>
+      <div class="two">
+        <label>Usuario u organización
+          <input name="owner" required autocomplete="off" spellcheck="false" placeholder="tu-usuario">
+        </label>
+        <label>Repo (privado)
+          <input name="repo" required autocomplete="off" spellcheck="false" placeholder="mis-datos">
+        </label>
+      </div>
+      <div class="two">
+        <label>Archivo
+          <input name="path" required autocomplete="off" spellcheck="false">
+        </label>
+        <label>Rama
+          <input name="branch" required autocomplete="off" spellcheck="false">
+        </label>
+      </div>
+      <p id="settings-msg" class="msg" role="status" aria-live="polite"></p>
+      <div class="actions">
+        <div class="extra"><button type="button" id="forget-token" class="link danger">Olvidar token</button></div>
+        <button type="button" class="btn" data-close>Cerrar</button>
+        <button type="submit" class="btn primary">Probar y guardar</button>
+      </div>
+    </form>
+  </dialog>
+</body>
+</html>
