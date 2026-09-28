@@ -31,7 +31,7 @@ A static PWA to track goals by horizon (daily, weekly, monthly, quarterly, yearl
 }
 ```
 
-Period keys (`YYYY-MM-DD`, `YYYY-Www` ISO week, `YYYY-MM`, `YYYY-Qn`, `YYYY`, `once`) are computed in the file's `timeZone`, so progress resets automatically every period. `js/periodo.js` also works as a Node CLI: `node js/periodo.js --file goals.json`.
+Period keys (`YYYY-MM-DD`, `YYYY-Www` ISO week, `YYYY-MM`, `YYYY-Qn`, `YYYY`, `once`) are computed in the file's `timeZone`, so progress resets automatically every period. `js/period.js` also works as a Node CLI: `node js/period.js --file goals.json`.
 
 ## Development
 

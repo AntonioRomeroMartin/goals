@@ -1,7 +1,7 @@
 // Pruebas de la lógica sin dependencias: `node --test tests/`
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { periodKey, periodKeys, daysUntil, civilDate, isValidTimeZone } from '../js/periodo.js';
+import { periodKey, periodKeys, daysUntil, civilDate, isValidTimeZone } from '../js/period.js';
 import { applyOps, categoryUsage, commitMessage, emptyDoc, normalize, serialize } from '../js/store.js';
 import { encodeBase64, decodeBase64 } from '../js/github.js';
 

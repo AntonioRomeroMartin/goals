@@ -5,7 +5,7 @@
 // Así, si el archivo cambió en GitHub mientras tanto (por ejemplo, desde otro dispositivo o a mano),
 // se vuelve a descargar y se reaplican las operaciones encima, sin pisar nada.
 
-/** @typedef {import('./periodo.js').Horizon} Horizon */
+/** @typedef {import('./period.js').Horizon} Horizon */
 
 /**
  * @typedef {Object} Goal

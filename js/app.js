@@ -1,12 +1,12 @@
 // @ts-check
-import { HORIZONS, periodKey, periodKeys, daysUntil, civilDate, deviceTimeZone, isValidTimeZone } from './periodo.js';
+import { HORIZONS, periodKey, periodKeys, daysUntil, civilDate, deviceTimeZone, isValidTimeZone } from './period.js';
 import { applyOps, categoryUsage, commitMessage, emptyDoc, newId, normalize, serialize } from './store.js';
 import { GitHubError, readFile, writeFile } from './github.js';
 
 /** @typedef {import('./store.js').Goal} Goal */
 /** @typedef {import('./store.js').GoalsDoc} GoalsDoc */
 /** @typedef {import('./store.js').Op} Op */
-/** @typedef {import('./periodo.js').Horizon} Horizon */
+/** @typedef {import('./period.js').Horizon} Horizon */
 /** @typedef {import('./github.js').RepoConfig} RepoConfig */
 
 const SAVE_DELAY_MS = 2000;

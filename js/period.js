@@ -3,8 +3,8 @@
 // (la del campo `timeZone` de goals.json), nunca en la del dispositivo por accidente.
 //
 // Este mismo archivo sirve como módulo del navegador y como CLI de Node:
-//   node periodo.mjs [--tz Zona/IANA] [--file ruta/goals.json] [fecha]
-//   node periodo.mjs [--tz ...] --dias YYYY-MM-DD [fecha]
+//   node period.mjs [--tz Zona/IANA] [--file ruta/goals.json] [fecha]
+//   node period.mjs [--tz ...] --dias YYYY-MM-DD [fecha]
 // Sin --tz, el CLI usa `timeZone` de ../goals.json (relativo a este archivo) o --file.
 
 /** @typedef {'day'|'week'|'month'|'quarter'|'year'|'deadline'} Horizon */
