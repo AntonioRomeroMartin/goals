@@ -12,5 +12,6 @@ Los datos de cada usuario viven en su propio repo privado.
 - Esquema del JSON: ver `js/store.js` (tipos `Goal` y `GoalsDoc`). Commits de la app con prefijo `goals:`.
 - Antes de subir: `node --test tests/`. Si cambia la lista `SHELL` de `sw.js`, sube `VERSION`.
 
-## Al terminar cada sesión
-Actualiza `progreso.md` (fecha, qué se hizo, siguiente paso) y haz commit y push a `main`.
+## Guardar el progreso
+Sobre la marcha, sin esperar al final (la sesión puede cerrarse sin aviso): tras cada cambio
+importante, actualiza `progreso.md` (fecha, qué se hizo, siguiente paso) y haz commit y push a `main`.
