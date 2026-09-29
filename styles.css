@@ -137,3 +137,18 @@ dialog .repeat .check { display: inline-flex; color: var(--text); font-size: .95
 dialog .repeat input[type="checkbox"] { width: auto; }
 .result { margin: 0; color: var(--muted); font-variant-numeric: tabular-nums; }
 dialog textarea { resize: vertical; min-height: 4.5em; }
+
+/* sub-objetivos */
+.subs { display: grid; gap: 4px; }
+.subs-count { margin: 0; font-size: .78rem; color: var(--muted); }
+.subs ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.sub { display: flex; align-items: flex-start; gap: 8px; font-size: .92rem; padding: 3px 0; overflow-wrap: anywhere; }
+.sub input { width: 18px; height: 18px; margin: 2px 0 0; flex: none; accent-color: var(--accent); }
+.sub.done span { color: var(--muted); text-decoration: line-through; }
+fieldset.subgoals { border: 0; margin: 0; padding: 0; display: grid; gap: 6px; }
+fieldset.subgoals legend { padding: 0; margin-bottom: 4px; font-size: .88rem; color: var(--muted); }
+#subgoal-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+#subgoal-list:empty { display: none; }
+#subgoal-list li { display: flex; align-items: center; gap: 10px; }
+#subgoal-list input { flex: 1; min-width: 0; }
+fieldset.subgoals > .link { justify-self: start; }

@@ -1,11 +1,12 @@
 // @ts-check
 import { HORIZONS, periodKey, periodKeys, daysUntil, civilDate, deviceTimeZone, isValidTimeZone } from './period.js';
-import { applyOps, categoryUsage, commitMessage, emptyDoc, goalKey, isDone, isExpired, newId, normalize, serialize } from './store.js';
+import { applyOps, categoryUsage, commitMessage, emptyDoc, goalKey, isDone, isExpired, newId, normalize, serialize, subgoalsDone } from './store.js';
 import { GitHubError, readFile, writeFile } from './github.js';
 
 /** @typedef {import('./store.js').Goal} Goal */
 /** @typedef {import('./store.js').GoalsDoc} GoalsDoc */
 /** @typedef {import('./store.js').Op} Op */
+/** @typedef {import('./store.js').Subgoal} Subgoal */
 /** @typedef {import('./period.js').Horizon} Horizon */
 /** @typedef {import('./github.js').RepoConfig} RepoConfig */
 
@@ -166,10 +167,10 @@ async function flush() {
   if (state.pending.length && state.online && !state.error) scheduleSave();
 }
 
-/** @param {Op} op */
-function dispatch(op) {
-  if (!canEdit()) return;
-  state.pending.push(op);
+/** @param {...Op} ops */
+function dispatch(...ops) {
+  if (!canEdit() || !ops.length) return;
+  state.pending.push(...ops);
   persist();
   render();
   scheduleSave();
@@ -415,7 +416,35 @@ function card(g, now) {
     h('button', { class: 'title', disabled: !canEdit(), onclick: () => openGoalForm(g) }, g.title),
     chips,
     g.notes ? h('p', { class: 'notes' }, g.notes) : null,
+    g.subgoals?.length ? subgoalList(g, key, editable) : null,
     progress,
+  );
+}
+
+/** Casillas de los sub-objetivos (en hábitos se desmarcan al cambiar de periodo). @param {Goal} g @param {string} key @param {boolean} editable */
+function subgoalList(g, key, editable) {
+  const subs = g.subgoals ?? [];
+  return h(
+    'div',
+    { class: 'subs' },
+    h('p', { class: 'subs-count' }, `Sub-goals · ${subgoalsDone(g, key)} of ${subs.length}`),
+    h(
+      'ul',
+      {},
+      ...subs.map((s) => {
+        const done = s.done.includes(key);
+        return h(
+          'li',
+          {},
+          h(
+            'label',
+            { class: done ? 'sub done' : 'sub' },
+            h('input', { type: 'checkbox', checked: done, disabled: !editable, onchange: () => dispatch({ type: 'toggleSub', id: g.id, subId: s.id, key, done: !done }) }),
+            h('span', {}, s.title),
+          ),
+        );
+      }),
+    ),
   );
 }
 
@@ -463,6 +492,13 @@ function openGoalForm(goal) {
   f.repo.value = goal?.repo ?? '';
   f.location.value = goal?.location ?? '';
   f.notes.value = goal?.notes ?? '';
+  const subList = $('subgoal-list');
+  subList.replaceChildren(...(goal?.subgoals ?? []).map((s) => subgoalRow(s.id, s.title)));
+  $('add-subgoal').onclick = () => {
+    const row = subgoalRow('', '');
+    subList.append(row);
+    /** @type {HTMLInputElement} */ (row.querySelector('input')).focus();
+  };
   syncFormVisibility(form);
 
   const actions = $('goal-extra-actions');
@@ -509,13 +545,49 @@ function openGoalForm(goal) {
       location: String(f.location.value).trim() || null,
       notes: String(f.notes.value).trim() || null,
     };
-    if (goal) dispatch({ type: 'edit', id: goal.id, fields });
-    else dispatch({ type: 'add', goal: { id: newId(), kind: 'goal', ...fields, progress: {}, createdAt: new Date().toISOString() } });
+    // Sub-objetivos: los vacíos se quitan; al editar, operaciones sueltas para no pisar casillas marcadas en otro sitio.
+    const rows = Array.from(subList.querySelectorAll('li'), (li) => ({
+      id: li.dataset.id ?? '',
+      title: /** @type {HTMLInputElement} */ (li.querySelector('input')).value.trim(),
+    })).filter((r) => r.title);
+    if (goal) {
+      const old = goal.subgoals ?? [];
+      /** @type {Op[]} */
+      const subOps = [
+        ...old.filter((s) => !rows.some((r) => r.id === s.id)).map((s) => /** @type {Op} */ ({ type: 'removeSub', id: goal.id, subId: s.id })),
+        ...rows.flatMap((r) => {
+          const prev = old.find((s) => s.id === r.id);
+          if (!prev) return [/** @type {Op} */ ({ type: 'addSub', id: goal.id, sub: { id: newId('s_'), title: r.title, done: [] } })];
+          return prev.title === r.title ? [] : [/** @type {Op} */ ({ type: 'editSub', id: goal.id, subId: r.id, title: r.title })];
+        }),
+      ];
+      dispatch({ type: 'edit', id: goal.id, fields }, ...subOps);
+    } else {
+      /** @type {Goal} */
+      const g = { id: newId(), kind: 'goal', ...fields, progress: {}, createdAt: new Date().toISOString() };
+      if (rows.length) g.subgoals = rows.map((r) => ({ id: newId('s_'), title: r.title, done: [] }));
+      dispatch({ type: 'add', goal: g });
+    }
     dialog.close();
   };
 
   dialog.showModal();
   if (!goal) f.title.focus();
+}
+
+/** Fila editable de un sub-objetivo en el formulario. @param {string} id @param {string} title */
+function subgoalRow(id, title) {
+  const li = h('li', {});
+  if (id) li.dataset.id = id;
+  const input = h('input', { value: title, maxlength: 120, autocomplete: 'off', placeholder: 'Step towards the goal', 'aria-label': 'Sub-goal' });
+  // Enter añade otra fila en vez de enviar el formulario.
+  input.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Enter' || ev.isComposing) return;
+    ev.preventDefault();
+    /** @type {HTMLButtonElement} */ ($('add-subgoal')).click();
+  });
+  li.append(input, h('button', { type: 'button', class: 'link danger', 'aria-label': 'Remove sub-goal', onclick: () => li.remove() }, 'Remove'));
+  return li;
 }
 
 /** @param {HTMLFormElement} form */

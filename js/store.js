@@ -27,7 +27,17 @@ import { daysUntil, periodKey } from './period.js';
  * @property {string|null} [repo]
  * @property {string|null} [location]  dónde (opcional, texto libre)
  * @property {string|null} [notes]     notas libres (opcional, varias líneas)
+ * @property {Subgoal[]} [subgoals]  pasos opcionales para lograrlo
  * @property {boolean} [archived]
+ */
+
+/**
+ * Sub-objetivo (paso). `done` lista las claves de periodo en que se completó: en un hábito
+ * se desmarca solo al empezar el periodo siguiente; en uno de una vez la clave es fija.
+ * @typedef {Object} Subgoal
+ * @property {string} id
+ * @property {string} title
+ * @property {string[]} done
  */
 
 /**
@@ -40,11 +50,15 @@ import { daysUntil, periodKey } from './period.js';
 
 /**
  * @typedef {{ type: 'add', goal: Goal }
- *   | { type: 'edit', id: string, fields: Partial<Omit<Goal, 'id'|'kind'|'progress'|'createdAt'>> }
+ *   | { type: 'edit', id: string, fields: Partial<Omit<Goal, 'id'|'kind'|'progress'|'createdAt'|'subgoals'>> }
  *   | { type: 'inc', id: string, key: string, delta: number }
  *   | { type: 'set', id: string, key: string, value: number }
  *   | { type: 'archive', id: string, archived: boolean }
  *   | { type: 'delete', id: string }
+ *   | { type: 'addSub', id: string, sub: Subgoal }
+ *   | { type: 'editSub', id: string, subId: string, title: string }
+ *   | { type: 'toggleSub', id: string, subId: string, key: string, done: boolean }
+ *   | { type: 'removeSub', id: string, subId: string }
  *   | { type: 'addCategory', name: string }
  *   | { type: 'removeCategory', name: string }
  *   | { type: 'setTimeZone', timeZone: string }} Op
@@ -83,6 +97,12 @@ export function normalize(raw) {
     // Compatibilidad: un objetivo con plazo sin `repeat` ni `period` se trata como hábito.
     if (typeof g.repeat !== 'boolean') g.repeat = g.horizon !== 'deadline' && !g.period;
     if (g.horizon === 'deadline') g.repeat = false;
+    if (g.subgoals !== undefined) {
+      g.subgoals = (Array.isArray(g.subgoals) ? g.subgoals : [])
+        .filter((/** @type {any} */ s) => s && typeof s.id === 'string' && typeof s.title === 'string')
+        .map((/** @type {any} */ s) => ({ ...s, done: Array.isArray(s.done) ? s.done.filter((/** @type {unknown} */ k) => typeof k === 'string') : [] }));
+      if (!g.subgoals.length) delete g.subgoals;
+    }
   }
   return { ...doc, version: Number(doc.version) || 1, categories, goals };
 }
@@ -115,6 +135,14 @@ export function isExpired(g, now, tz) {
 export function isDone(g, key) {
   const value = g.progress[key] ?? 0;
   return g.target && g.target > 0 ? value >= g.target : value > 0;
+}
+
+/**
+ * Sub-objetivos completados en ese periodo.
+ * @param {Goal} g @param {string} key
+ */
+export function subgoalsDone(g, key) {
+  return (g.subgoals ?? []).filter((s) => s.done.includes(key)).length;
 }
 
 /** @param {string} [prefix] */
@@ -174,6 +202,31 @@ export function applyOps(doc, ops) {
       case 'delete':
         out.goals = out.goals.filter((g) => g.id !== op.id);
         break;
+      case 'addSub': {
+        const g = find(op.id);
+        if (!g || g.subgoals?.some((s) => s.id === op.sub.id)) break;
+        (g.subgoals ??= []).push(structuredClone(op.sub));
+        break;
+      }
+      case 'editSub': {
+        const s = find(op.id)?.subgoals?.find((x) => x.id === op.subId);
+        if (s) s.title = op.title;
+        break;
+      }
+      case 'toggleSub': {
+        const s = find(op.id)?.subgoals?.find((x) => x.id === op.subId);
+        if (!s) break;
+        s.done = s.done.filter((k) => k !== op.key);
+        if (op.done) s.done.push(op.key);
+        break;
+      }
+      case 'removeSub': {
+        const g = find(op.id);
+        if (!g?.subgoals) break;
+        g.subgoals = g.subgoals.filter((s) => s.id !== op.subId);
+        if (!g.subgoals.length) delete g.subgoals;
+        break;
+      }
       case 'addCategory':
         if (op.name && !out.categories.includes(op.name)) out.categories.push(op.name);
         break;
@@ -219,6 +272,10 @@ export function commitMessage(ops, before, after) {
       case 'set': parts.add(`progress “${title(op.id)}”`); break;
       case 'archive': parts.add(`${op.archived ? 'archived' : 'restored'} “${title(op.id)}”`); break;
       case 'delete': parts.add(`deleted “${title(op.id)}”`); break;
+      case 'addSub':
+      case 'editSub':
+      case 'toggleSub':
+      case 'removeSub': parts.add(`sub-goals “${title(op.id)}”`); break;
       case 'addCategory': parts.add(`category “${op.name}”`); break;
       case 'removeCategory': parts.add(`removed category “${op.name}”`); break;
       case 'setTimeZone': parts.add(`time zone ${op.timeZone}`); break;

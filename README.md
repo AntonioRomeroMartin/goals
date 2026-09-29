@@ -27,7 +27,8 @@ A static PWA to track goals by horizon (daily, weekly, monthly, quarterly, yearl
   "goals": [{ "id": "…", "kind": "goal", "title": "…", "category": "…",
               "horizon": "day|week|month|quarter|year|deadline", "target": 3, "unit": "…",
               "deadline": null, "repeat": false, "period": "2026-W40",
-              "progress": { "2026-W40": 2 }, "createdAt": "…", "repo": null, "archived": false }]
+              "progress": { "2026-W40": 2 }, "createdAt": "…", "repo": null, "archived": false,
+              "subgoals": [{ "id": "…", "title": "…", "done": ["2026-W40"] }] }]
 }
 ```
 
@@ -35,6 +36,7 @@ Period keys (`YYYY-MM-DD`, `YYYY-Www` ISO week, `YYYY-MM`, `YYYY-Qn`, `YYYY`, `o
 
 - **One-off goals** (`repeat: false`, the default): the horizon is when the goal expires. A weekly goal created now belongs to the current week (`period`), and when the week ends it moves to **Past** as completed or missed.
 - **Habits** (`repeat: true`): the goal renews every period and progress starts again from 0; history is kept per period.
+- **Sub-goals** (optional): steps towards a goal, ticked off on its card. `done` lists the period keys in which each one was completed, so a habit's sub-goals start unticked every period.
 - **With deadline**: accumulates under `once` and moves to Past the day after `deadline`. `js/period.js` also works as a Node CLI: `node js/period.js --file goals.json`.
 
 ## Development

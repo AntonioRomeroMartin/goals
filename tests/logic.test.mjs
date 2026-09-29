@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { periodKey, periodKeys, daysUntil, civilDate, isValidTimeZone } from '../js/period.js';
-import { applyOps, categoryUsage, commitMessage, emptyDoc, goalKey, isDone, isExpired, normalize, serialize } from '../js/store.js';
+import { applyOps, categoryUsage, commitMessage, emptyDoc, goalKey, isDone, isExpired, normalize, serialize, subgoalsDone } from '../js/store.js';
 import { encodeBase64, decodeBase64 } from '../js/github.js';
 
 const UTC = 'UTC';
@@ -189,4 +189,37 @@ test('lugar y notas: se guardan, se editan y se borran', () => {
   assert.equal(doc.goals[0].location, null);
   assert.equal(doc.goals[0].notes, 'Otra');
   assert.equal(normalize(JSON.parse(serialize(doc))).goals[0].notes, 'Otra');
+});
+
+test('sub-objetivos: añadir, marcar por periodo, renombrar y quitar', () => {
+  const sub = (id, title) => ({ id, title, done: [] });
+  let doc = applyOps(emptyDoc(UTC), [{ type: 'add', goal: goal('g1', { repeat: true, subgoals: [sub('s1', 'Paso 1')] }) }]);
+  doc = applyOps(doc, [
+    { type: 'addSub', id: 'g1', sub: sub('s2', 'Paso 2') },
+    { type: 'addSub', id: 'g1', sub: sub('s2', 'Duplicado') }, // mismo id: se ignora
+    { type: 'toggleSub', id: 'g1', subId: 's1', key: '2026-W40', done: true },
+    { type: 'toggleSub', id: 'g1', subId: 's1', key: '2026-W40', done: true }, // idempotente
+    { type: 'editSub', id: 'g1', subId: 's2', title: 'Paso dos' },
+    { type: 'toggleSub', id: 'nope', subId: 's1', key: '2026-W40', done: true }, // objetivo inexistente
+  ]);
+  const g = doc.goals[0];
+  assert.deepEqual(g.subgoals?.map((s) => s.title), ['Paso 1', 'Paso dos']);
+  assert.equal(subgoalsDone(g, '2026-W40'), 1);
+  assert.equal(subgoalsDone(g, '2026-W41'), 0); // hábito: la semana siguiente empieza sin marcar
+  doc = applyOps(doc, [{ type: 'toggleSub', id: 'g1', subId: 's1', key: '2026-W40', done: false }]);
+  assert.equal(subgoalsDone(doc.goals[0], '2026-W40'), 0);
+  doc = applyOps(doc, [{ type: 'removeSub', id: 'g1', subId: 's1' }, { type: 'removeSub', id: 'g1', subId: 's2' }]);
+  assert.equal(doc.goals[0].subgoals, undefined); // sin sub-objetivos no queda el campo
+  assert.match(commitMessage([{ type: 'removeSub', id: 'g1', subId: 's1' }], doc, doc), /sub-goals “Objetivo g1”/);
+});
+
+test('sub-objetivos: normalize tolera datos raros', () => {
+  const doc = normalize({ goals: [
+    goal('a', { subgoals: [{ id: 's1', title: 'Ok', done: ['once', 3] }, { title: 'sin id' }, null] }),
+    goal('b', { subgoals: 'x' }),
+    goal('c'),
+  ] });
+  assert.deepEqual(doc.goals[0].subgoals, [{ id: 's1', title: 'Ok', done: ['once'] }]);
+  assert.equal(doc.goals[1].subgoals, undefined);
+  assert.ok(!('subgoals' in doc.goals[2]));
 });
