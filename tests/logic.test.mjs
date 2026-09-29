@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { periodKey, periodKeys, daysUntil, civilDate, isValidTimeZone } from '../js/period.js';
-import { applyOps, categoryUsage, commitMessage, emptyDoc, normalize, serialize } from '../js/store.js';
+import { applyOps, categoryUsage, commitMessage, emptyDoc, goalKey, isDone, isExpired, normalize, serialize } from '../js/store.js';
 import { encodeBase64, decodeBase64 } from '../js/github.js';
 
 const UTC = 'UTC';
@@ -143,4 +143,40 @@ test('base64 con acentos y emojis', () => {
   const s = '{"title":"Leer «Cien años» 📚"}';
   assert.equal(decodeBase64(encodeBase64(s)), s);
   assert.equal(encodeBase64('ñ'), Buffer.from('ñ').toString('base64'));
+});
+
+test('hábito (repeat): usa el periodo actual y nunca caduca', () => {
+  const g = goal('h', { repeat: true, progress: { '2026-W40': 4 } });
+  const mon = new Date('2026-09-28T12:00:00Z');
+  const nextMon = new Date('2026-10-05T12:00:00Z');
+  assert.equal(goalKey(g, mon, UTC), '2026-W40');
+  assert.ok(isDone(g, goalKey(g, mon, UTC)));
+  assert.equal(goalKey(g, nextMon, UTC), '2026-W41'); // se reinicia: 0 / 4
+  assert.ok(!isDone(g, goalKey(g, nextMon, UTC)));
+  assert.ok(!isExpired(g, nextMon, UTC));
+});
+
+test('de una vez: se queda en su periodo y caduca al terminar', () => {
+  const g = goal('o', { repeat: false, period: '2026-W40', progress: { '2026-W40': 2 } });
+  const sunday = new Date('2026-10-04T23:00:00Z');
+  const monday = new Date('2026-10-05T00:30:00Z');
+  assert.ok(!isExpired(g, sunday, UTC));
+  assert.ok(isExpired(g, monday, UTC));
+  assert.equal(goalKey(g, monday, UTC), '2026-W40'); // el resultado sigue siendo el de su semana
+  assert.ok(!isDone(g, '2026-W40')); // 2 / 4 -> no cumplido
+  assert.ok(isDone({ ...g, target: null, progress: { '2026-W40': 1 } }, '2026-W40'));
+});
+
+test('fecha límite: caduca al día siguiente de la fecha', () => {
+  const g = goal('d', { horizon: 'deadline', deadline: '2026-10-09', repeat: false, target: null });
+  assert.equal(goalKey(g, new Date('2026-10-01T00:00:00Z'), UTC), 'once');
+  assert.ok(!isExpired(g, new Date('2026-10-09T23:59:00Z'), UTC));
+  assert.ok(isExpired(g, new Date('2026-10-10T00:01:00Z'), UTC));
+});
+
+test('compatibilidad: objetivos sin repeat', () => {
+  const doc = normalize({ goals: [goal('a'), goal('b', { period: '2026-W40' }), goal('c', { horizon: 'deadline', repeat: true })] });
+  assert.equal(doc.goals[0].repeat, true); // sin period: hábito, como antes
+  assert.equal(doc.goals[1].repeat, false); // con period: de una vez
+  assert.equal(doc.goals[2].repeat, false); // fecha límite nunca se repite
 });

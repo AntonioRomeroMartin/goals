@@ -26,12 +26,16 @@ A static PWA to track goals by horizon (daily, weekly, monthly, quarterly, yearl
   "categories": ["…"],
   "goals": [{ "id": "…", "kind": "goal", "title": "…", "category": "…",
               "horizon": "day|week|month|quarter|year|deadline", "target": 3, "unit": "…",
-              "deadline": null, "progress": { "2026-W40": 2 }, "createdAt": "…",
-              "repo": null, "archived": false }]
+              "deadline": null, "repeat": false, "period": "2026-W40",
+              "progress": { "2026-W40": 2 }, "createdAt": "…", "repo": null, "archived": false }]
 }
 ```
 
-Period keys (`YYYY-MM-DD`, `YYYY-Www` ISO week, `YYYY-MM`, `YYYY-Qn`, `YYYY`, `once`) are computed in the file's `timeZone`, so progress resets automatically every period. `js/period.js` also works as a Node CLI: `node js/period.js --file goals.json`.
+Period keys (`YYYY-MM-DD`, `YYYY-Www` ISO week, `YYYY-MM`, `YYYY-Qn`, `YYYY`, `once`) are computed in the file's `timeZone`.
+
+- **One-off goals** (`repeat: false`, the default): the horizon is when the goal expires. A weekly goal created now belongs to the current week (`period`), and when the week ends it moves to **Past** as completed or missed.
+- **Habits** (`repeat: true`): the goal renews every period and progress starts again from 0; history is kept per period.
+- **With deadline**: accumulates under `once` and moves to Past the day after `deadline`. `js/period.js` also works as a Node CLI: `node js/period.js --file goals.json`.
 
 ## Development
 

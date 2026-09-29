@@ -37,7 +37,11 @@
       <button data-view="category" aria-pressed="false">By category</button>
     </div>
     <select id="filter" aria-label="Filter by category"></select>
-    <label class="check"><input type="checkbox" id="archived"> Archived</label>
+    <select id="scope" aria-label="Show">
+      <option value="active">Active</option>
+      <option value="past">Past</option>
+      <option value="archived">Archived</option>
+    </select>
     <button id="manage" class="link">Categories</button>
   </nav>
 
@@ -70,6 +74,10 @@
       <label id="field-deadline" hidden>Deadline
         <input name="deadline" type="date">
       </label>
+      <div id="field-repeat" class="repeat">
+        <label class="check"><input type="checkbox" name="repeat"> Repeat every period</label>
+        <p id="repeat-hint" class="hint"></p>
+      </div>
       <div class="two">
         <label>Target (optional)
           <input name="target" inputmode="decimal" placeholder="e.g. 4" autocomplete="off">

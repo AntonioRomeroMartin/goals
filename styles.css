@@ -128,3 +128,10 @@ code { font-size: .9em; }
 .inline-form { display: flex; gap: 8px; }
 .inline-form input { flex: 1; min-width: 0; padding: 9px 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); color: var(--text); }
 .toolbar .link { margin-left: auto; font-size: .9rem; }
+
+/* repetición y pasados */
+.repeat { display: grid; gap: 2px; }
+.repeat[hidden] { display: none; }
+dialog .repeat .check { display: inline-flex; color: var(--text); font-size: .95rem; }
+dialog .repeat input[type="checkbox"] { width: auto; }
+.result { margin: 0; color: var(--muted); font-variant-numeric: tabular-nums; }

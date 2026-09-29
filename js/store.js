@@ -5,6 +5,8 @@
 // Así, si el archivo cambió en GitHub mientras tanto (por ejemplo, desde otro dispositivo o a mano),
 // se vuelve a descargar y se reaplican las operaciones encima, sin pisar nada.
 
+import { daysUntil, periodKey } from './period.js';
+
 /** @typedef {import('./period.js').Horizon} Horizon */
 
 /**
@@ -17,6 +19,9 @@
  * @property {number|null} target
  * @property {string|null} unit
  * @property {string|null} deadline   YYYY-MM-DD, solo para horizon "deadline"
+ * @property {boolean} [repeat]       true: se renueva en cada periodo (hábito);
+ *                                    false: de una vez, caduca al terminar `period`
+ * @property {string|null} [period]   clave del periodo de un objetivo de una vez (p. ej. "2026-W40")
  * @property {Record<string, number>} progress  claveDePeriodo -> número
  * @property {string} createdAt       ISO 8601
  * @property {string|null} [repo]
@@ -73,8 +78,41 @@ export function normalize(raw) {
   for (const g of goals) {
     if (g.category && !categories.includes(g.category)) categories.push(g.category);
     if (!g.progress || typeof g.progress !== 'object') g.progress = {};
+    // Compatibilidad: un objetivo con plazo sin `repeat` ni `period` se trata como hábito.
+    if (typeof g.repeat !== 'boolean') g.repeat = g.horizon !== 'deadline' && !g.period;
+    if (g.horizon === 'deadline') g.repeat = false;
   }
   return { ...doc, version: Number(doc.version) || 1, categories, goals };
+}
+
+/**
+ * Clave de periodo en la que se anota el progreso del objetivo "ahora".
+ * Hábitos: el periodo actual. De una vez: su propio periodo. Fecha límite: "once".
+ * @param {Goal} g @param {Date} now @param {string} tz
+ */
+export function goalKey(g, now, tz) {
+  if (g.horizon === 'deadline') return 'once';
+  if (g.repeat || !g.period) return periodKey(g.horizon, now, tz);
+  return g.period;
+}
+
+/**
+ * ¿Ha caducado? (Los hábitos nunca caducan.)
+ * @param {Goal} g @param {Date} now @param {string} tz
+ */
+export function isExpired(g, now, tz) {
+  if (g.horizon === 'deadline') return !!g.deadline && daysUntil(g.deadline, now, tz) < 0;
+  if (g.repeat || !g.period) return false;
+  return g.period !== periodKey(g.horizon, now, tz);
+}
+
+/**
+ * ¿Cumplido en ese periodo? Con meta: llegar a ella. Sin meta: marcado como hecho.
+ * @param {Goal} g @param {string} key
+ */
+export function isDone(g, key) {
+  const value = g.progress[key] ?? 0;
+  return g.target && g.target > 0 ? value >= g.target : value > 0;
 }
 
 /** @param {string} [prefix] */

@@ -1,6 +1,6 @@
 // @ts-check
 import { HORIZONS, periodKey, periodKeys, daysUntil, civilDate, deviceTimeZone, isValidTimeZone } from './period.js';
-import { applyOps, categoryUsage, commitMessage, emptyDoc, newId, normalize, serialize } from './store.js';
+import { applyOps, categoryUsage, commitMessage, emptyDoc, goalKey, isDone, isExpired, newId, normalize, serialize } from './store.js';
 import { GitHubError, readFile, writeFile } from './github.js';
 
 /** @typedef {import('./store.js').Goal} Goal */
@@ -52,7 +52,8 @@ const state = {
   /** @type {'horizon'|'category'} */
   view: 'horizon',
   filter: '',
-  showArchived: false,
+  /** @type {'active'|'past'|'archived'} */
+  scope: 'active',
 };
 
 /** @type {ReturnType<typeof setTimeout>|undefined} */
@@ -81,7 +82,7 @@ function lsSet(key, value) {
 
 function persist() {
   lsSet(LS.pending, state.pending.length ? state.pending : null);
-  lsSet(LS.ui, { view: state.view, filter: state.filter, showArchived: state.showArchived });
+  lsSet(LS.ui, { view: state.view, filter: state.filter, scope: state.scope });
 }
 
 function cacheBase() {
@@ -268,7 +269,7 @@ function renderToolbar() {
   );
   if (state.filter && !doc.categories.includes(state.filter)) state.filter = '';
   select.value = state.filter;
-  /** @type {HTMLInputElement} */ ($('archived')).checked = state.showArchived;
+  /** @type {HTMLSelectElement} */ ($('scope')).value = state.scope;
 }
 
 function renderList() {
@@ -276,29 +277,39 @@ function renderList() {
   main.replaceChildren();
   const doc = current();
   const now = new Date();
-  const goals = doc.goals.filter(
-    (g) => (state.showArchived ? g.archived : !g.archived) && (!state.filter || g.category === state.filter),
-  );
+  const zone = tz();
+  const inScope = (/** @type {Goal} */ g) =>
+    state.scope === 'archived' ? !!g.archived
+      : state.scope === 'past' ? !g.archived && isExpired(g, now, zone)
+      : !g.archived && !isExpired(g, now, zone);
+  const goals = doc.goals.filter((g) => inScope(g) && (!state.filter || g.category === state.filter));
 
   if (!state.loaded && !state.fetchedAt) {
     main.append(h('p', { class: 'empty' }, state.cfg ? 'Loading goals…' : 'No data yet.'));
     return;
   }
   if (!goals.length) {
-    const msg = state.showArchived
+    const msg = state.scope === 'archived'
       ? 'No archived goals.'
-      : doc.goals.length ? 'No goals here yet.' : 'You have no goals yet. Create your first one with “+ New”.';
+      : state.scope === 'past'
+        ? 'No past goals yet. One-off goals move here when their period or deadline ends.'
+        : doc.goals.length ? 'No goals here yet.' : 'You have no goals yet. Create your first one with “+ New”.';
     main.append(h('p', { class: 'empty' }, msg));
     return;
   }
 
   /** @type {[string, string, Goal[]][]} */
   const groups = [];
-  if (state.view === 'horizon') {
+  if (state.scope === 'past') {
+    const end = (/** @type {Goal} */ g) => (g.horizon === 'deadline' ? g.deadline ?? '' : g.createdAt);
+    goals.sort((a, b) => end(b).localeCompare(end(a)));
+    const done = goals.filter((g) => isDone(g, goalKey(g, now, zone))).length;
+    groups.push(['Past', `${done} of ${goals.length} completed (${Math.round((done / goals.length) * 100)}%)`, goals]);
+  } else if (state.view === 'horizon') {
     for (const hz of HORIZONS) {
       const list = goals.filter((g) => g.horizon === hz);
       if (!list.length) continue;
-      const sub = hz === 'deadline' ? '' : periodKey(hz, now, tz());
+      const sub = hz === 'deadline' ? '' : periodKey(hz, now, zone);
       if (hz === 'deadline') list.sort((a, b) => (a.deadline ?? '9999').localeCompare(b.deadline ?? '9999'));
       groups.push([HORIZON_LABEL[hz], sub, list]);
     }
@@ -325,17 +336,26 @@ function renderList() {
 
 /** @param {Goal} g @param {Date} now */
 function card(g, now) {
-  const key = periodKey(g.horizon, now, tz());
+  const zone = tz();
+  const key = goalKey(g, now, zone);
   const value = g.progress[key] ?? 0;
-  const editable = canEdit() && !g.archived;
+  const expired = isExpired(g, now, zone);
+  const editable = canEdit() && !g.archived && !expired;
   const target = g.target && g.target > 0 ? g.target : null;
-  const done = target ? value >= target : value > 0;
+  const done = isDone(g, key);
+  const when = g.horizon === 'deadline' ? 'Deadline' : g.repeat || expired ? HORIZON_SHORT[g.horizon] : HORIZON_LABEL[g.horizon];
 
   const chips = h(
     'div',
     { class: 'chips' },
-    h('span', { class: 'chip' }, state.view === 'horizon' ? g.category : HORIZON_SHORT[g.horizon]),
-    g.horizon === 'deadline' && g.deadline ? deadlineChip(g.deadline, now) : null,
+    // Activos: la vista ya agrupa por plazo o por categoría, así que se muestra lo otro.
+    // Pasados y archivados: lista única, se muestran los dos.
+    state.scope !== 'active' || state.view === 'horizon' ? h('span', { class: 'chip' }, g.category) : null,
+    state.scope !== 'active' || state.view === 'category' ? h('span', { class: 'chip muted' }, when) : null,
+    g.repeat && state.scope === 'active' ? h('span', { class: 'chip muted' }, '↻ Repeats') : null,
+    expired ? h('span', { class: 'chip muted' }, g.horizon === 'deadline' ? g.deadline ?? '' : key) : null,
+    expired ? h('span', { class: done ? 'chip' : 'chip danger' }, done ? '✓ Completed' : '✗ Missed') : null,
+    g.horizon === 'deadline' && g.deadline && !expired ? deadlineChip(g.deadline, now) : null,
     g.repo ? h('span', { class: 'chip muted' }, g.repo) : null,
   );
 
@@ -347,6 +367,8 @@ function card(g, now) {
       { class: 'row' },
       h('button', { class: 'btn', disabled: !canEdit(), onclick: () => dispatch({ type: 'archive', id: g.id, archived: false }) }, 'Restore'),
     );
+  } else if (expired) {
+    progress = h('p', { class: 'result' }, target ? `${fmt(value)} / ${fmt(target)}${g.unit ? ` ${g.unit}` : ''}` : done ? 'Done' : 'Not done');
   } else if (target) {
     const pct = Math.min(100, (value / target) * 100);
     const bar = h('div', { class: 'bar', role: 'progressbar', 'aria-valuemin': 0, 'aria-valuemax': target, 'aria-valuenow': value });
@@ -388,7 +410,7 @@ function card(g, now) {
 
   return h(
     'article',
-    { class: done && !g.archived ? 'card is-done' : 'card' },
+    { class: done && !g.archived && !expired ? 'card is-done' : 'card' },
     h('button', { class: 'title', disabled: !canEdit(), onclick: () => openGoalForm(g) }, g.title),
     chips,
     progress,
@@ -435,6 +457,7 @@ function openGoalForm(goal) {
   f.target.value = goal?.target ?? '';
   f.unit.value = goal?.unit ?? '';
   f.deadline.value = goal?.deadline ?? '';
+  f.repeat.checked = !!goal?.repeat;
   f.repo.value = goal?.repo ?? '';
   syncFormVisibility(form);
 
@@ -461,6 +484,10 @@ function openGoalForm(goal) {
     const targetRaw = String(f.target.value).trim().replace(',', '.');
     const target = targetRaw === '' ? null : Number(targetRaw);
     const deadline = horizon === 'deadline' ? String(f.deadline.value) || null : null;
+    const repeat = horizon !== 'deadline' && !!f.repeat.checked;
+    // De una vez: siempre el periodo actual (se conserva al editar si no cambia el plazo).
+    const keepPeriod = goal && !goal.repeat && goal.horizon === horizon && goal.period;
+    const period = repeat || horizon === 'deadline' ? null : keepPeriod || periodKey(horizon, new Date(), tz());
     if (!title) return f.title.focus();
     if (!category) return f.newCategory.focus();
     if (target !== null && (!Number.isFinite(target) || target <= 0)) return alert('The target must be a number greater than 0 (or leave it empty).');
@@ -472,6 +499,8 @@ function openGoalForm(goal) {
       target,
       unit: target !== null ? String(f.unit.value).trim() || null : null,
       deadline,
+      repeat,
+      period,
       repo: String(f.repo.value).trim() || null,
     };
     if (goal) dispatch({ type: 'edit', id: goal.id, fields });
@@ -488,6 +517,11 @@ function syncFormVisibility(form) {
   const f = /** @type {any} */ (form.elements);
   $('field-new-category').hidden = f.category.value !== NEW_CATEGORY;
   $('field-deadline').hidden = f.horizon.value !== 'deadline';
+  $('field-repeat').hidden = f.horizon.value === 'deadline';
+  const hz = /** @type {Horizon} */ (f.horizon.value);
+  $('repeat-hint').textContent = hz === 'deadline' ? '' : f.repeat.checked
+    ? `Habit: renews every ${hz}.`
+    : `One-off: ends with ${HORIZON_LABEL[hz].toLowerCase()} (${periodKey(hz, new Date(), tz())}), then moves to Past.`;
   f.deadline.required = f.horizon.value === 'deadline';
 }
 
@@ -652,7 +686,7 @@ function init() {
   if (ui) {
     state.view = ui.view === 'category' ? 'category' : 'horizon';
     state.filter = typeof ui.filter === 'string' ? ui.filter : '';
-    state.showArchived = !!ui.showArchived;
+    state.scope = ['active', 'past', 'archived'].includes(ui.scope) ? ui.scope : ui.showArchived ? 'archived' : 'active';
   }
 
   for (const btn of document.querySelectorAll('[data-view]')) {
@@ -667,8 +701,8 @@ function init() {
     persist();
     render();
   });
-  $('archived').addEventListener('change', (ev) => {
-    state.showArchived = /** @type {HTMLInputElement} */ (ev.target).checked;
+  $('scope').addEventListener('change', (ev) => {
+    state.scope = /** @type {any} */ (/** @type {HTMLSelectElement} */ (ev.target).value);
     persist();
     render();
   });
