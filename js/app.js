@@ -357,6 +357,7 @@ function card(g, now) {
     expired ? h('span', { class: done ? 'chip' : 'chip danger' }, done ? '✓ Completed' : '✗ Missed') : null,
     g.horizon === 'deadline' && g.deadline && !expired ? deadlineChip(g.deadline, now) : null,
     g.repo ? h('span', { class: 'chip muted' }, g.repo) : null,
+    g.location ? h('span', { class: 'chip muted' }, `📍 ${g.location}`) : null,
   );
 
   /** @type {HTMLElement} */
@@ -413,6 +414,7 @@ function card(g, now) {
     { class: done && !g.archived && !expired ? 'card is-done' : 'card' },
     h('button', { class: 'title', disabled: !canEdit(), onclick: () => openGoalForm(g) }, g.title),
     chips,
+    g.notes ? h('p', { class: 'notes' }, g.notes) : null,
     progress,
   );
 }
@@ -459,6 +461,8 @@ function openGoalForm(goal) {
   f.deadline.value = goal?.deadline ?? '';
   f.repeat.checked = !!goal?.repeat;
   f.repo.value = goal?.repo ?? '';
+  f.location.value = goal?.location ?? '';
+  f.notes.value = goal?.notes ?? '';
   syncFormVisibility(form);
 
   const actions = $('goal-extra-actions');
@@ -502,6 +506,8 @@ function openGoalForm(goal) {
       repeat,
       period,
       repo: String(f.repo.value).trim() || null,
+      location: String(f.location.value).trim() || null,
+      notes: String(f.notes.value).trim() || null,
     };
     if (goal) dispatch({ type: 'edit', id: goal.id, fields });
     else dispatch({ type: 'add', goal: { id: newId(), kind: 'goal', ...fields, progress: {}, createdAt: new Date().toISOString() } });

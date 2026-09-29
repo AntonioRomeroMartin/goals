@@ -25,6 +25,8 @@ import { daysUntil, periodKey } from './period.js';
  * @property {Record<string, number>} progress  claveDePeriodo -> número
  * @property {string} createdAt       ISO 8601
  * @property {string|null} [repo]
+ * @property {string|null} [location]  dónde (opcional, texto libre)
+ * @property {string|null} [notes]     notas libres (opcional, varias líneas)
  * @property {boolean} [archived]
  */
 

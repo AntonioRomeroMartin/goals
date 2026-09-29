@@ -180,3 +180,13 @@ test('compatibilidad: objetivos sin repeat', () => {
   assert.equal(doc.goals[1].repeat, false); // con period: de una vez
   assert.equal(doc.goals[2].repeat, false); // fecha límite nunca se repite
 });
+
+test('lugar y notas: se guardan, se editan y se borran', () => {
+  let doc = applyOps(emptyDoc(UTC), [{ type: 'add', goal: goal('g1', { location: 'Biblioteca', notes: 'Línea 1\nLínea 2' }) }]);
+  assert.equal(doc.goals[0].location, 'Biblioteca');
+  assert.equal(doc.goals[0].notes, 'Línea 1\nLínea 2');
+  doc = applyOps(doc, [{ type: 'edit', id: 'g1', fields: { location: null, notes: 'Otra' } }]);
+  assert.equal(doc.goals[0].location, null);
+  assert.equal(doc.goals[0].notes, 'Otra');
+  assert.equal(normalize(JSON.parse(serialize(doc))).goals[0].notes, 'Otra');
+});
